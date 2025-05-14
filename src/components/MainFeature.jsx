@@ -591,10 +591,7 @@ function MainFeature() {
                   )}
                 </div>
               </th>
-              </th>
-                className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell" 
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell"
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell"
                 onClick={() => handleSort('department')}
                 <div className="flex items-center">
                   <span>Department</span>
@@ -609,8 +606,6 @@ function MainFeature() {
                   )}
                 </div>
               </th>
-                scope="col" 
-              <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell"
                 onClick={() => handleSort('gender')}
@@ -623,6 +618,7 @@ function MainFeature() {
                         <ArrowUpIcon className="h-3 w-3" />
                       ) : (
                         <ArrowDownIcon className="h-3 w-3" />
+                    </span>
                     </span>
                   )}
                 </div>
