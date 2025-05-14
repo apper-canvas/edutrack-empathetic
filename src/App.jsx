@@ -122,7 +122,7 @@ function App() {
             </Routes>
           </AnimatePresence>
         </main>
-      </main>
+      </div>
 
       {/* Footer */}
       <footer className="bg-white dark:bg-surface-800 py-4 border-t border-surface-200 dark:border-surface-700">
