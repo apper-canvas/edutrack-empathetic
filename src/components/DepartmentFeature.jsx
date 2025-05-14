@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCurrentDepartment } from '../store/departmentSlice';
+import { fetchDepartments, createDepartment, updateDepartmentRecord, deleteDepartmentRecord } from '../services/departmentService';
 import { format } from 'date-fns';
 import getIcon from '../utils/iconUtils';
 
@@ -17,56 +20,9 @@ const ArrowUpIcon = getIcon('ArrowUp');
 const RefreshCwIcon = getIcon('RefreshCw');
 const PlusIcon = getIcon('Plus');
 
-// Initial department data
-const initialDepartments = [
-  {
-    id: '1',
-    name: 'Science',
-    code: 'SCI',
-    head: 'Dr. Emily Chen',
-    location: 'Building A, Floor 2',
-    establishedDate: '1995-09-01',
-    studentCount: 142,
-    facultyCount: 12,
-    description: 'Department of Physics, Chemistry and Biology'
-  },
-  {
-    id: '2',
-    name: 'Mathematics',
-    code: 'MATH',
-    head: 'Prof. David Wilson',
-    location: 'Building B, Floor 3',
-    establishedDate: '1995-09-01',
-    studentCount: 98,
-    facultyCount: 8,
-    description: 'Department of Pure and Applied Mathematics'
-  },
-  {
-    id: '3',
-    name: 'Arts and Humanities',
-    code: 'ART',
-    head: 'Dr. Sarah Johnson',
-    location: 'Building C, Floor 1',
-    establishedDate: '1997-03-15',
-    studentCount: 115,
-    facultyCount: 10,
-    description: 'Department of Literature, History, Philosophy and Fine Arts'
-  },
-  {
-    id: '4',
-    name: 'Computer Science',
-    code: 'CS',
-    head: 'Prof. Michael Zhang',
-    location: 'Building D, Floor 4',
-    establishedDate: '2001-11-30',
-    studentCount: 165,
-    facultyCount: 14,
-    description: 'Department of Computer Science and Information Technology'
-  },
-];
-
 function DepartmentFeature() {
-  const [departments, setDepartments] = useState(initialDepartments);
+  const dispatch = useDispatch();
+  const { departments, isLoading } = useSelector((state) => state.departments);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddingDepartment, setIsAddingDepartment] = useState(false);
   const [isEditingDepartment, setIsEditingDepartment] = useState(false);
@@ -74,7 +30,15 @@ function DepartmentFeature() {
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [formErrors, setFormErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch departments on component mount
+  useEffect(() => {
+    // Initial data load
+    dispatch(fetchDepartments({
+      sortField,
+      sortDirection
+    }));
+  }, [dispatch, sortField, sortDirection]);
 
   // New department template
   const newDepartmentTemplate = {
@@ -129,50 +93,109 @@ function DepartmentFeature() {
 
   // Add or update department
   const saveDepartment = () => {
+    // Map form fields to database fields
+    const mapDepartment = (dept) => {
+      return {
+        Name: dept.name,
+        code: dept.code,
+        head: dept.head,
+        location: dept.location,
+        establishedDate: dept.establishedDate,
+        studentCount: parseInt(dept.studentCount, 10),
+        facultyCount: parseInt(dept.facultyCount, 10),
+        description: dept.description
+      };
+    };
+    
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      if (isAddingDepartment) {
-        const newDepartment = {
-          ...currentDepartment,
-          id: Date.now().toString(),
-        };
-        setDepartments([...departments, newDepartment]);
-        toast.success('Department added successfully!');
-      } else {
-        setDepartments(
-          departments.map((department) =>
-            department.id === currentDepartment.id ? currentDepartment : department
-          )
-        );
-        toast.success('Department updated successfully!');
-      }
+    if (isAddingDepartment) {
+      // Create new department
+      const departmentData = mapDepartment(currentDepartment);
       
-      resetForm();
-      setIsLoading(false);
-    }, 800);
+      dispatch(createDepartment(departmentData))
+        .then(() => {
+          resetForm();
+          toast.success('Department added successfully!');
+          
+          // Refresh department list
+          dispatch(fetchDepartments({
+            sortField,
+            sortDirection,
+            searchTerm: searchTerm || undefined
+          }));
+        })
+        .catch((error) => {
+          toast.error(`Failed to add department: ${error.message}`);
+        });
+    } else {
+      // Update existing department
+      const departmentData = {
+        Id: currentDepartment.Id,
+        ...mapDepartment(currentDepartment)
+      };
+      
+      dispatch(updateDepartmentRecord(departmentData))
+        .then(() => {
+          resetForm();
+          toast.success('Department updated successfully!');
+          
+          // Refresh department list
+          dispatch(fetchDepartments({
+            sortField,
+            sortDirection,
+            searchTerm: searchTerm || undefined
+          }));
+        })
+        .catch((error) => {
+          toast.error(`Failed to update department: ${error.message}`);
+        });
+    }
   };
 
   // Delete department
   const deleteDepartment = (id) => {
     if (confirm('Are you sure you want to delete this department?')) {
-      setIsLoading(true);
+      dispatch(deleteDepartmentRecord(id))
+        .then(() => {
+        toast.success('Department added successfully!');
       
-      // Simulate API call
-      setTimeout(() => {
-        setDepartments(departments.filter((department) => department.id !== id));
-        toast.success('Department deleted successfully!');
-        setIsLoading(false);
-      }, 800);
+        // Refresh department list
+        dispatch(fetchDepartments({
+          sortField,
+          sortDirection,
+          searchTerm: searchTerm || undefined
+        }));
+      })
+      .catch((error) => {
+        toast.error(`Failed to delete department: ${error.message}`);
+      });
     }
+  };
+
+    const uiDepartment = convertApiToUiModel(department);
+    setCurrentDepartment(uiDepartment);
+  // Convert API department model to UI model
+  const convertApiToUiModel = (apiDepartment) => {
+    return {
+      Id: apiDepartment.Id,
+      id: apiDepartment.Id,
+      name: apiDepartment.Name || '',
+      code: apiDepartment.code || '',
+      head: apiDepartment.head || '',
+      location: apiDepartment.location || '',
+      establishedDate: apiDepartment.establishedDate || '',
+      studentCount: apiDepartment.studentCount || 0,
+      facultyCount: apiDepartment.facultyCount || 0,
+      description: apiDepartment.description || ''
+    };
   };
 
   // Start adding new department
   const addNewDepartment = () => {
+    dispatch(setCurrentDepartment(null));
     setCurrentDepartment(newDepartmentTemplate);
+    dispatch(setCurrentDepartment(null));
     setFormErrors({});
     setIsAddingDepartment(true);
     setIsEditingDepartment(false);
@@ -207,12 +230,17 @@ function DepartmentFeature() {
   // Get sorted and filtered departments
   const getFilteredDepartments = () => {
     // First filter by search term
-    let filtered = departments.filter((department) => {
+      return dateString ? format(new Date(dateString), 'MMM d, yyyy') : '';
       const matchesSearch = 
+      console.error('Error formatting date:', error, dateString);
         department.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         department.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
         department.head.toLowerCase().includes(searchTerm.toLowerCase());
       
+  // Ensure we have search term normalized
+  const normalizedSearchTerm = searchTerm ? searchTerm.toLowerCase() : '';
+  
+  // Filter the results client-side in addition to server-side
       return matchesSearch;
     });
     
@@ -616,7 +644,7 @@ function DepartmentFeature() {
               </tr>
             ) : (
               filteredDepartments.map((department) => (
-                <tr 
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
                   key={department.id}
                   className="hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                 >
@@ -625,7 +653,7 @@ function DepartmentFeature() {
                       <div>
                         <div className="text-sm font-medium">{department.name}</div>
                         <div className="text-xs text-surface-500 dark:text-surface-400 md:hidden">
-                          {department.head}
+                    <div>
                         </div>
                       </div>
                     </div>
@@ -638,9 +666,9 @@ function DepartmentFeature() {
                   <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                     <div className="text-sm">{department.head}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                    <div className="text-sm">{formatDate(department.establishedDate)}</div>
-                  </td>
+                <tr 
+                  key={department.Id}
+                  className="hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium">{department.studentCount}</div>
                     <div className="text-xs text-surface-500 dark:text-surface-400">
@@ -649,11 +677,11 @@ function DepartmentFeature() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
-                      onClick={() => editDepartment(department)}
+                      </div>
                       className="text-primary hover:text-primary-dark mx-1"
                       disabled={isAddingDepartment || isEditingDepartment}
                     >
-                      <EditIcon className="h-4 w-4" />
+                    <span className="px-2 py-1 text-xs rounded-full bg-primary-light/20 text-primary-dark dark:text-primary-light">
                     </button>
                     <button
                       onClick={() => deleteDepartment(department.id)}
@@ -674,11 +702,11 @@ function DepartmentFeature() {
       <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-4 rounded-lg text-sm">
         <p>
           This department management feature lets you add, edit, and delete academic departments.
-          Each department tracks its head, location, establishment date, and student/faculty counts.
+                      className="text-primary hover:text-primary-dark mx-1"
         </p>
       </div>
     </div>
   );
 }
-
-export default DepartmentFeature;
+                      onClick={() => deleteDepartment(department.Id)}
+                      className="text-red-500 hover:text-red-700 mx-1"

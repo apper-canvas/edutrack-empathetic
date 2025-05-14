@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCurrentStudent } from '../store/studentSlice';
+import { fetchStudents, createStudent, updateStudentRecord, deleteStudentRecord } from '../services/studentService';
 import { format } from 'date-fns';
 import getIcon from '../utils/iconUtils';
 
@@ -15,57 +18,11 @@ const FilterIcon = getIcon('Filter');
 const ArrowDownIcon = getIcon('ArrowDown');
 const ArrowUpIcon = getIcon('ArrowUp');
 const RefreshCwIcon = getIcon('RefreshCw');
-
-// Initial student data
-const initialStudents = [
-  {
-    id: '1',
-    firstName: 'Emma',
-    lastName: 'Johnson',
-    gender: 'Female',
-    dateOfBirth: '2005-03-15',
-    gradeLevel: '11th',
-    email: 'emma.j@example.com',
-    contactPhone: '(555) 123-4567',
-    department: 'Science'
-  },
-  {
-    id: '2',
-    firstName: 'Noah',
-    lastName: 'Williams',
-    gender: 'Male',
-    dateOfBirth: '2006-07-22',
-    gradeLevel: '10th',
-    email: 'noah.w@example.com',
-    contactPhone: '(555) 234-5678',
-    department: 'Mathematics'
-  },
-  {
-    id: '3',
-    firstName: 'Sophia',
-    lastName: 'Brown',
-    gender: 'Female',
-    dateOfBirth: '2005-11-08',
-    gradeLevel: '11th',
-    email: 'sophia.b@example.com',
-    contactPhone: '(555) 345-6789',
-    department: 'Arts and Humanities'
-  },
-  {
-    id: '4',
-    firstName: 'Liam',
-    lastName: 'Davis',
-    gender: 'Male',
-    dateOfBirth: '2006-01-30',
-    gradeLevel: '10th',
-    email: 'liam.d@example.com',
-    contactPhone: '(555) 456-7890',
-    department: 'Physical Education'
-  },
-];
+const PlusIcon = getIcon('Plus');
 
 function MainFeature() {
-  const [students, setStudents] = useState(initialStudents);
+  const dispatch = useDispatch();
+  const { students, isLoading } = useSelector((state) => state.students);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [isEditingStudent, setIsEditingStudent] = useState(false);
@@ -73,7 +30,6 @@ function MainFeature() {
   const [sortField, setSortField] = useState('lastName');
   const [sortDirection, setSortDirection] = useState('asc');
   const [formErrors, setFormErrors] = useState({});
-  const [gradeFilter, setGradeFilter] = useState('all');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   
   // Available departments
@@ -86,8 +42,17 @@ function MainFeature() {
     'Computer Science',
     'Business Studies'
   ];
-  const [isLoading, setIsLoading] = useState(false);
+  const [gradeFilter, setGradeFilter] = useState('all');
 
+  // Fetch students on component mount
+  useEffect(() => {
+    // Initial data load
+    dispatch(fetchStudents({
+      sortField,
+      sortDirection
+    }));
+  }, [dispatch, sortField, sortDirection]);
+  
   // New student template
   const newStudentTemplate = {
     id: '',
@@ -147,50 +112,115 @@ function MainFeature() {
 
   // Add or update student
   const saveStudent = () => {
+    // Map form fields to database fields
+    const mapStudent = (student) => {
+      return {
+        firstName: student.firstName,
+        lastName: student.lastName,
+        gender: student.gender,
+        dateOfBirth: student.dateOfBirth,
+        gradeLevel: student.gradeLevel,
+        email: student.email,
+        contactPhone: student.contactPhone,
+        department: student.department,
+      };
+    };
+    
     if (!validateForm()) return;
 
-    setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      if (isAddingStudent) {
-        const newStudent = {
-          ...currentStudent,
-          id: Date.now().toString(),
-        };
-        setStudents([...students, newStudent]);
-        toast.success('Student added successfully!');
-      } else {
-        setStudents(
-          students.map((student) =>
-            student.id === currentStudent.id ? currentStudent : student
-          )
-        );
-        toast.success('Student updated successfully!');
-      }
+    if (isAddingStudent) {
+      // Create new student
+      const studentData = mapStudent(currentStudent);
       
-      resetForm();
-      setIsLoading(false);
-    }, 800);
+      dispatch(createStudent(studentData))
+        .then(() => {
+          resetForm();
+          toast.success('Student added successfully!');
+          
+          // Refresh student list
+          dispatch(fetchStudents({
+            sortField,
+            sortDirection,
+            searchTerm: searchTerm || undefined,
+            gradeLevel: gradeFilter !== 'all' ? gradeFilter : undefined,
+            department: departmentFilter !== 'all' ? departmentFilter : undefined,
+          }));
+        })
+        .catch((error) => {
+          toast.error(`Failed to add student: ${error.message}`);
+        });
+    } else {
+      // Update existing student
+      const studentData = {
+        Id: currentStudent.Id,
+        ...mapStudent(currentStudent)
+      };
+      
+      dispatch(updateStudentRecord(studentData))
+        .then(() => {
+          resetForm();
+          toast.success('Student updated successfully!');
+          
+          // Refresh student list
+          dispatch(fetchStudents({
+            sortField,
+            sortDirection,
+            searchTerm: searchTerm || undefined,
+            gradeLevel: gradeFilter !== 'all' ? gradeFilter : undefined,
+            department: departmentFilter !== 'all' ? departmentFilter : undefined,
+          }));
+        })
+        .catch((error) => {
+          toast.error(`Failed to update student: ${error.message}`);
+        });
+    }
   };
 
   // Delete student
   const deleteStudent = (id) => {
     if (confirm('Are you sure you want to delete this student?')) {
-      setIsLoading(true);
+      dispatch(deleteStudentRecord(id))
+        .then(() => {
+        toast.success('Student added successfully!');
       
-      // Simulate API call
-      setTimeout(() => {
-        setStudents(students.filter((student) => student.id !== id));
-        toast.success('Student deleted successfully!');
-        setIsLoading(false);
-      }, 800);
+        // Refresh student list
+        dispatch(fetchStudents({
+          sortField,
+          sortDirection,
+          searchTerm: searchTerm || undefined,
+          gradeLevel: gradeFilter !== 'all' ? gradeFilter : undefined,
+          department: departmentFilter !== 'all' ? departmentFilter : undefined,
+        }));
+      })
+      .catch((error) => {
+        toast.error(`Failed to delete student: ${error.message}`);
+      });
     }
   };
 
+    const uiStudent = convertApiToUiModel(student);
+    setCurrentStudent(uiStudent);
+  // Convert API student model to UI model
+  const convertApiToUiModel = (apiStudent) => {
+    return {
+      Id: apiStudent.Id,
+      id: apiStudent.Id,
+      firstName: apiStudent.firstName || '',
+      lastName: apiStudent.lastName || '',
+      gender: apiStudent.gender || '',
+      dateOfBirth: apiStudent.dateOfBirth || '',
+      gradeLevel: apiStudent.gradeLevel || '',
+      email: apiStudent.email || '',
+      contactPhone: apiStudent.contactPhone || '',
+      department: apiStudent.department || '',
+    };
+  };
+
+    dispatch(setCurrentStudent(null));
   // Start adding new student
   const addNewStudent = () => {
     setCurrentStudent(newStudentTemplate);
+    dispatch(setCurrentStudent(null));
     setFormErrors({});
     setIsAddingStudent(true);
     setIsEditingStudent(false);
@@ -224,8 +254,9 @@ function MainFeature() {
 
   // Get sorted and filtered students
   const getFilteredStudents = () => {
-    // First filter by search term and grade level
+      return dateString ? format(new Date(dateString), 'MMM d, yyyy') : '';
     let filtered = students.filter((student) => {
+      console.error('Error formatting date:', error, dateString);
       const matchesSearch = 
         student.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         student.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -236,12 +267,17 @@ function MainFeature() {
       
       return matchesSearch && matchesGrade && matchesDepartment;
     });
-    
-    // Then sort
-    filtered.sort((a, b) => {
-      const fieldA = a[sortField].toLowerCase();
-      const fieldB = b[sortField].toLowerCase();
-      
+    dispatch(fetchStudents({
+      sortField,
+      sortDirection,
+      searchTerm: searchTerm || undefined,
+      gradeLevel: gradeFilter !== 'all' ? gradeFilter : undefined,
+      department: departmentFilter !== 'all' ? departmentFilter : undefined,
+    }))
+      .then(() => {
+        toast.success('Student data refreshed');
+      })
+      .catch((error) => toast.error(`Error refreshing data: ${error.message}`));
       if (fieldA < fieldB) return sortDirection === 'asc' ? -1 : 1;
       if (fieldA > fieldB) return sortDirection === 'asc' ? 1 : -1;
       return 0;
@@ -272,16 +308,16 @@ function MainFeature() {
       setIsLoading(false);
     }, 800);
   };
-
+          > 
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { 
-        staggerChildren: 0.05 
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={addNewStudent}
       }
-    }
+            disabled={isLoading || isAddingStudent || isEditingStudent}
   };
   
   const itemVariants = {
@@ -689,8 +725,8 @@ function MainFeature() {
                 component="tbody"
               >
                 {filteredStudents.map((student) => (
-                  <motion.tr 
-                    key={student.id}
+                animate="visible"
+                component="tbody"
                     variants={itemVariants}
                     className="hover:bg-surface-50 dark:hover:bg-surface-700 transition-colors"
                   >
@@ -702,7 +738,7 @@ function MainFeature() {
                           </div>
                           <div className="text-sm text-surface-500 dark:text-surface-400 md:hidden">
                             {student.gender}
-                          </div>
+                            {student.lastName || ''}, {student.firstName || ''}
                         </div>
                       </div>
                     </td>
@@ -717,7 +753,7 @@ function MainFeature() {
                     <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                       <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
                         {student.department}
-                      </span>
+                    </td>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                       <div className="text-sm">{formatDate(student.dateOfBirth)}</div>
@@ -738,7 +774,7 @@ function MainFeature() {
                         <EditIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => deleteStudent(student.id)}
+                        onClick={() => deleteStudent(student.Id)}
                         className="text-red-500 hover:text-red-700 mx-1"
                         disabled={isAddingStudent || isEditingStudent}
                       >
