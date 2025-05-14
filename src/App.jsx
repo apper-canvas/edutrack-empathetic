@@ -7,6 +7,7 @@ import getIcon from './utils/iconUtils';
 
 // Pages
 import Home from './pages/Home';
+import Department from './pages/Department';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -19,6 +20,8 @@ function App() {
   // Icon declarations
   const MoonIcon = getIcon('Moon');
   const SunIcon = getIcon('Sun');
+  const HomeIcon = getIcon('Home');
+  const BuildingIcon = getIcon('Building');
   const GraduationCapIcon = getIcon('GraduationCap');
 
   // Effect to apply dark mode to document
@@ -46,7 +49,7 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-white dark:bg-surface-800 shadow-sm sticky top-0 z-10">
+      <header className="bg-white dark:bg-surface-800 shadow-sm sticky top-0 z-20">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <GraduationCapIcon className="h-8 w-8 text-primary" />
@@ -80,12 +83,44 @@ function App() {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-grow container mx-auto px-4 py-6">
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="*" element={<NotFound />} />
+      <div className="flex flex-col md:flex-row flex-grow">
+        {/* Sidebar */}
+        <aside className="w-full md:w-64 bg-white dark:bg-surface-800 border-r border-surface-200 dark:border-surface-700 md:min-h-screen">
+          <nav className="p-4">
+            <ul className="space-y-2">
+              <li>
+                <motion.a 
+                  href="/"
+                  whileHover={{ x: 5 }}
+                  className="flex items-center gap-3 px-4 py-3 text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                >
+                  <HomeIcon className="h-5 w-5 text-primary" />
+                  <span>Dashboard</span>
+                </motion.a>
+              </li>
+              <li>
+                <motion.a 
+                  href="/departments"
+                  whileHover={{ x: 5 }}
+                  className="flex items-center gap-3 px-4 py-3 text-surface-600 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors"
+                >
+                  <BuildingIcon className="h-5 w-5 text-primary" />
+                  <span>Departments</span>
+                </motion.a>
+              </li>
+            </ul>
+          </nav>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-grow p-4 md:p-6 overflow-auto">
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/departments" element={<Department />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AnimatePresence>
           </Routes>
         </AnimatePresence>
       </main>

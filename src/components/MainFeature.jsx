@@ -27,6 +27,7 @@ const initialStudents = [
     gradeLevel: '11th',
     email: 'emma.j@example.com',
     contactPhone: '(555) 123-4567',
+    department: 'Science'
   },
   {
     id: '2',
@@ -37,6 +38,7 @@ const initialStudents = [
     gradeLevel: '10th',
     email: 'noah.w@example.com',
     contactPhone: '(555) 234-5678',
+    department: 'Mathematics'
   },
   {
     id: '3',
@@ -47,6 +49,7 @@ const initialStudents = [
     gradeLevel: '11th',
     email: 'sophia.b@example.com',
     contactPhone: '(555) 345-6789',
+    department: 'Arts and Humanities'
   },
   {
     id: '4',
@@ -57,6 +60,7 @@ const initialStudents = [
     gradeLevel: '10th',
     email: 'liam.d@example.com',
     contactPhone: '(555) 456-7890',
+    department: 'Physical Education'
   },
 ];
 
@@ -70,6 +74,18 @@ function MainFeature() {
   const [sortDirection, setSortDirection] = useState('asc');
   const [formErrors, setFormErrors] = useState({});
   const [gradeFilter, setGradeFilter] = useState('all');
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  
+  // Available departments
+  const departments = [
+    'Science',
+    'Mathematics',
+    'Arts and Humanities',
+    'Social Sciences',
+    'Physical Education',
+    'Computer Science',
+    'Business Studies'
+  ];
   const [isLoading, setIsLoading] = useState(false);
 
   // New student template
@@ -82,6 +98,7 @@ function MainFeature() {
     gradeLevel: '',
     email: '',
     contactPhone: '',
+    department: '',
   };
 
   // Handle form change
@@ -110,6 +127,7 @@ function MainFeature() {
     if (!currentStudent.dateOfBirth) errors.dateOfBirth = 'Date of birth is required';
     if (!currentStudent.gradeLevel) errors.gradeLevel = 'Grade level is required';
     
+    if (!currentStudent.department) errors.department = 'Department is required';
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!currentStudent.email.trim()) {
@@ -214,8 +232,9 @@ function MainFeature() {
         student.email.toLowerCase().includes(searchTerm.toLowerCase());
         
       const matchesGrade = gradeFilter === 'all' || student.gradeLevel === gradeFilter;
+      const matchesDepartment = departmentFilter === 'all' || student.department === departmentFilter;
       
-      return matchesSearch && matchesGrade;
+      return matchesSearch && matchesGrade && matchesDepartment;
     });
     
     // Then sort
@@ -502,6 +521,21 @@ function MainFeature() {
               <FilterIcon className="h-4 w-4 text-surface-400" />
             </div>
             <select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              className="pl-10 input-field"
+            >
+              <option value="all">All Departments</option>
+              {departments.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+          </div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FilterIcon className="h-4 w-4 text-surface-400" />
+            </div>
+            <select
               value={gradeFilter}
               onChange={(e) => setGradeFilter(e.target.value)}
               className="pl-10 input-field"
@@ -557,6 +591,24 @@ function MainFeature() {
                   )}
                 </div>
               </th>
+                className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell"
+                onClick={() => handleSort('department')}
+              >
+                <div className="flex items-center">
+                  <span>Department</span>
+                  {sortField === 'department' && (
+                    <span className="ml-1">
+                      {sortDirection === 'asc' ? (
+                        <ArrowUpIcon className="h-3 w-3" />
+                      ) : (
+                        <ArrowDownIcon className="h-3 w-3" />
+                      )}
+                    </span>
+                  )}
+                </div>
+              </th>
+              <th
+                scope="col"
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell"
@@ -612,7 +664,7 @@ function MainFeature() {
           <tbody className="bg-white dark:bg-surface-800 divide-y divide-surface-200 dark:divide-surface-700">
             {isLoading ? (
               <tr>
-                <td colSpan="6" className="px-6 py-10 text-center text-surface-500">
+                <td colSpan="7" className="px-6 py-10 text-center text-surface-500">
                   <div className="flex justify-center items-center">
                     <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
                     <span className="ml-3">Loading student data...</span>
@@ -621,8 +673,8 @@ function MainFeature() {
               </tr>
             ) : filteredStudents.length === 0 ? (
               <tr>
-                <td colSpan="6" className="px-6 py-10 text-center text-surface-500">
-                  {searchTerm || gradeFilter !== 'all' ? (
+                <td colSpan="7" className="px-6 py-10 text-center text-surface-500">
+                  {searchTerm || gradeFilter !== 'all' || departmentFilter !== 'all' ? (
                     <div>
                       <p className="text-lg font-medium mb-2">No matching students found</p>
                       <p className="text-sm">Try adjusting your search or filters</p>
@@ -669,12 +721,18 @@ function MainFeature() {
                       <div className="text-sm">{student.gender}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                      <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
+                        {student.department}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                       <div className="text-sm">{formatDate(student.dateOfBirth)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm">{student.email}</div>
                       <div className="text-xs text-surface-500 dark:text-surface-400 md:hidden">
                         {formatDate(student.dateOfBirth)}
+                        <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">{student.department}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -704,8 +762,9 @@ function MainFeature() {
       {/* Info message */}
       <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 p-4 rounded-lg text-sm">
         <p>
-          This student management feature lets you add, edit, and delete student records.
-          Use the search bar and grade filter to find specific students.
+          This student management feature lets you add, edit, and delete student records. 
+          Students can be assigned to specific departments.
+          Use the search bar, grade filter, and department filter to find specific students.
         </p>
       </div>
     </div>
