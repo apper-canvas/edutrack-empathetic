@@ -591,8 +591,9 @@ function MainFeature() {
                   )}
                 </div>
               </th>
-                className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell"
+              </th>
               <th
+                className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell" 
                 className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell" 
               >
                 <div className="flex items-center">
@@ -608,9 +609,7 @@ function MainFeature() {
                   )}
                 </div>
               </th>
-              <th
-                scope="col"
-              <th
+                scope="col" 
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider cursor-pointer hover:bg-surface-100 dark:hover:bg-surface-700 hidden md:table-cell"
                 onClick={() => handleSort('gender')}

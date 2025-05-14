@@ -121,8 +121,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AnimatePresence>
-          </Routes>
-        </AnimatePresence>
+        </main>
       </main>
 
       {/* Footer */}
